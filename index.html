@@ -1,0 +1,53 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>LabCraft AI</title>
+<style>
+:root{--bg:#f2f2f7;--card:rgba(255,255,255,.72);--tx:#1c1c1e;--sub:#6e6e73;--ac:#007aff;--ac2:#5ac8fa;--ln:rgba(60,60,67,.18)}
+@media(prefers-color-scheme:dark){:root{--bg:#000;--card:rgba(44,44,46,.7);--tx:#fff;--sub:#a1a1a6;--ln:rgba(235,235,245,.2)}}
+*{box-sizing:border-box}body{margin:0;font:16px -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;color:var(--tx);background:radial-gradient(900px 500px at 10% -10%,#5ac8fa55,transparent),radial-gradient(800px 500px at 100% 0,#af52de44,transparent),var(--bg);min-height:100vh;padding:env(safe-area-inset-top) 0 40px}
+main{max-width:760px;margin:0 auto;padding:24px 16px}h1{font-size:34px;letter-spacing:-.8px;margin:24px 0 4px}p.s{color:var(--sub);margin:0 0 20px}
+.card{background:var(--card);backdrop-filter:blur(30px) saturate(180%);-webkit-backdrop-filter:blur(30px) saturate(180%);border:1px solid var(--ln);border-radius:24px;padding:18px;margin-bottom:14px;animation:up .6s cubic-bezier(.2,.9,.3,1.15) both}
+@keyframes up{from{opacity:0;transform:translateY(24px) scale(.97)}}
+label{display:block;font-size:13px;font-weight:600;color:var(--sub);margin:12px 0 6px}
+input,textarea{width:100%;border:1px solid var(--ln);background:transparent;color:var(--tx);border-radius:14px;padding:12px;font:inherit;transition:.25s}input:focus,textarea:focus{outline:0;border-color:var(--ac);box-shadow:0 0 0 4px #007aff33}textarea{min-height:84px;resize:vertical}
+button{border:0;border-radius:16px;padding:14px 20px;font:600 16px inherit;background:linear-gradient(135deg,var(--ac),#5856d6);color:#fff;cursor:pointer;transition:transform .35s cubic-bezier(.2,.9,.3,1.4),opacity .2s}button:active{transform:scale(.95)}button.g{background:var(--card);color:var(--ac);border:1px solid var(--ln)}button:disabled{opacity:.5}
+#go{width:100%;margin-top:6px}.img{display:flex;gap:10px;align-items:center;margin-top:10px;animation:up .4s both}.img img{width:56px;height:56px;object-fit:cover;border-radius:12px}
+#prog{display:none}.st{padding:8px 0;color:var(--sub);display:flex;gap:10px;transition:.4s}.st.on{color:var(--tx);transform:translateX(6px)}.st.done{color:#34c759}.st i{width:10px;height:10px;border-radius:50%;background:currentColor;margin-top:6px}.st.on i{animation:p 1s infinite}@keyframes p{50%{transform:scale(1.8);opacity:.4}}
+#out{display:none}.bar{display:flex;gap:10px;margin-bottom:14px;position:sticky;top:8px;z-index:5}
+.paper{background:#fff;color:#202122;font-family:"Times New Roman",Times,serif;font-size:17px;line-height:1.65;padding:36px 32px;border:1px solid #a2a9b1;border-radius:6px;animation:up .7s both}
+.paper h1{font:400 30px "Times New Roman",serif;border-bottom:1px solid #a2a9b1;margin:0 0 12px}.paper h2{font:400 23px "Times New Roman",serif;border-bottom:1px solid #a2a9b1;margin:26px 0 10px}
+.paper p{margin:0 0 12px;text-align:justify}.toc{display:inline-block;background:#f8f9fa;border:1px solid #a2a9b1;padding:8px 18px;font-size:15px;margin:6px 0 10px}.toc a{color:#0645ad;text-decoration:none;display:block}
+figure{margin:14px auto;text-align:center;background:#f8f9fa;border:1px solid #c8ccd1;padding:8px;max-width:520px}figure img{max-width:100%}figcaption,.paper caption{font-size:14px}
+table{border-collapse:collapse;margin:10px auto}td,th{border:1px solid #a2a9b1;padding:5px 10px}th{background:#eaecf0}.ref{padding-left:32px;text-indent:-32px}
+@media print{body{background:#fff}main>*:not(#out),.bar{display:none}#out{display:block}.paper{border:0}}
+</style></head><body><main>
+<h1>LabCraft AI</h1><p class="s">Lab report + 15-article literature review, written for you.</p>
+<div class="card" id="form">
+<label>Report topic</label><input id="t" placeholder="e.g. Quality assessment of five brands of paracetamol tablets">
+<label>Aim (optional)</label><input id="a">
+<label>Materials and equipment</label><textarea id="m"></textarea>
+<label>Methods you followed (brief notes)</label><textarea id="me"></textarea>
+<label>Your results data (weights, hardness, friability, etc.)</label><textarea id="d" placeholder="Paste raw numbers per brand/test"></textarea>
+<label>Result images (required)</label><input type="file" id="f" accept="image/*" multiple><div id="imgs"></div>
+<label>Your name and index number (optional)</label><input id="n">
+<button id="go" style="margin-top:18px">Generate report</button></div>
+<div class="card" id="prog"><div class="st" data-i=0><i></i>Searching scholarly sources</div><div class="st" data-i=1><i></i>Reviewing and paraphrasing 15 articles</div><div class="st" data-i=2><i></i>Writing your report</div><div class="st" data-i=3><i></i>Formatting in Times New Roman</div><p id="err" style="color:#ff3b30"></p></div>
+<div id="out"><div class="bar"><button id="doc">Download Word</button><button class="g" onclick="print()">Print / PDF</button></div><div class="paper" id="paper"></div></div>
+</main><script>
+const $=i=>document.getElementById(i),imgs=[];
+$("f").onchange=async e=>{for(const f of e.target.files){const u=await shrink(f),r=document.createElement("div");r.className="img";r.innerHTML=`<img src="${u}"><input placeholder="Caption (e.g. Friability of Brand A)">`;$("imgs").append(r);imgs.push({u,c:r.querySelector("input")})}};
+const shrink=f=>new Promise(r=>{const i=new Image;i.onload=()=>{const s=Math.min(1,900/i.width),c=document.createElement("canvas");c.width=i.width*s;c.height=i.height*s;c.getContext("2d").drawImage(i,0,0,c.width,c.height);r(c.toDataURL("image/jpeg",.8))};i.src=URL.createObjectURL(f)});
+const api=async b=>{const r=await fetch("/.netlify/functions/generate",{method:"POST",body:JSON.stringify(b)}),j=await r.json();if(!r.ok)throw Error(j.error||"Request failed");return j};
+const step=n=>document.querySelectorAll(".st").forEach((s,i)=>{s.className="st "+(i<n?"done":i==n?"on":"")});
+$("go").onclick=async()=>{$("err").textContent="";if(!$("t").value.trim())return $("err").textContent="Enter a topic.",$("prog").style.display="block";
+if(!imgs.length){$("prog").style.display="block";return $("err").textContent="Upload at least one result image."}
+const d={title:$("t").value,aim:$("a").value,materials:$("m").value,methods:$("me").value,data:$("d").value,figures:imgs.map(x=>x.c.value||"Result image")};
+$("go").disabled=true;$("prog").style.display="block";step(0);
+try{const {notes}=await api({action:"research",d});step(2);const {report}=await api({action:"write",d,notes});step(3);render(report,d);step(4)}
+catch(e){$("err").textContent=e.message}$("go").disabled=false};
+const P=a=>[].concat(a||[]).map(x=>`<p>${x}</p>`).join("");
+function render(r,d){const refs=(r.references||[]).slice().sort((a,b)=>a.localeCompare(b));let n=0;
+const secs=[["Aim",`<p>${r.aim}</p>`],["Specific objectives","<ol>"+(r.objectives||[]).map(o=>`<li>${o}</li>`).join("")+"</ol>"],["Introduction",P(r.introduction)],["Review of related literature",P(r.literature)],["Materials and equipment",P(r.materials)],["Methods",P(r.methods)],
+["Results and calculations",P(r.results)+(r.table?`<table><caption><b>Table 1:</b> ${r.table.caption}</caption><tr>${r.table.head.map(h=>`<th>${h}</th>`).join("")}</tr>${r.table.rows.map(x=>"<tr>"+x.map(c=>`<td>${c}</td>`).join("")+"</tr>").join("")}</table>`:"")+imgs.map(x=>`<figure><img src="${x.u}"><figcaption><b>Figure ${++n}:</b> ${x.c.value||"Result image"}</figcaption></figure>`).join("")+(r.calculation?`<p><b>Sample calculation.</b> ${r.calculation}</p>`:"")],["Discussion",P(r.discussion)],["Conclusion",P(r.conclusion)],["References",refs.map(x=>`<p class="ref">${x}</p>`).join("")]];
+$("paper").innerHTML=`<h1>${r.title}</h1>${d.n||$("n").value?`<p><i>${$("n").value}</i></p>`:""}<div class="toc"><b>Contents</b>${secs.map((s,i)=>`<a href="#s${i}">${i+1} ${s[0]}</a>`).join("")}</div>`+secs.map((s,i)=>`<h2 id="s${i}">${s[0]}</h2>${s[1]}`).join("");
+$("prog").style.display="none";$("form").style.display="none";$("out").style.display="block";scrollTo({top:0,behavior:"smooth"})}
+$("doc").onclick=()=>{const h=`<html xmlns:w="urn:schemas-microsoft-com:office:word"><meta charset="utf-8"><style>body{font-family:'Times New Roman';font-size:12pt}table{border-collapse:collapse}td,th{border:1px solid #000}</style><body>${$("paper").innerHTML.replace(/<div class="toc">.*?<\/div>/s,"")}</body></html>`,a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff",h],{type:"application/msword"}));a.download="lab-report.doc";a.click()};
+</script></body></html>
